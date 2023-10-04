@@ -106,8 +106,6 @@ if __name__ == '__main__':
     dir_yesterday = os.environ['DIR_YESTERDAY']
     clean_dirs = int(os.getenv('CLEAN_DIRS', 0))
 
-    os.remove(os.path.join(dir_today, 'output.sql'))
-
     for i in os.listdir(dir_today):
         if os.path.isfile(os.path.join(dir_today,i)) and '_output.sql' in i:
             process_table_delta(os.path.join(dir_today,i), os.path.join(dir_yesterday,i))
