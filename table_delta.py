@@ -12,6 +12,8 @@ class TableSchema:
 
 def isJunk(line):
     junk = ['+ \n', '- \n', 'COPY', 'None', '\\.']
+    if line is None:
+        return True
     for j in junk:
         if j in line:
             return True
@@ -77,20 +79,21 @@ def process_table_delta(file_today, file_yesterday):
             b1 = []
             b2 = []
             for n, lines in enumerate(itertools.zip_longest(hosts0, hosts1)):
-                if sub1 in lines[0] and sub2 in lines[0]:
-                    idx1 = lines[0].index(sub1)
-                    idx2 = lines[0].index(sub2)
-                    res = lines[0][idx1 + len(sub1) + 1: idx2]
-                    els = res.split(' ')
-                    table.name = els[0]
-                    table.cols = els[1][1: len(els[1]) - 1].split(',')
-                b1.append(lines[0])
-                b2.append(lines[1])
-                if n > 0 and n % 100000 == 0:
-                    b2 = ['' if v is None else v for v in b2]
-                    process_chunk(out, b1, b2, table)
-                    b1 = []
-                    b2 = []
+                if not isJunk(lines[0]):
+                    if sub1 in lines[0] and sub2 in lines[0]:
+                        idx1 = lines[0].index(sub1)
+                        idx2 = lines[0].index(sub2)
+                        res = lines[0][idx1 + len(sub1) + 1: idx2]
+                        els = res.split(' ')
+                        table.name = els[0]
+                        table.cols = els[1][1: len(els[1]) - 1].split(',')
+                    b1.append(lines[0])
+                    b2.append(lines[1])
+                    if n > 0 and n % 100000 == 0:
+                        b2 = ['' if v is None else v for v in b2]
+                        process_chunk(out, b1, b2, table)
+                        b1 = []
+                        b2 = []
             b2 = ['' if v is None else v for v in b2]
             process_chunk(out, b1, b2, table)
             out.write('COMMIT;\n')
