@@ -11,7 +11,7 @@ class TableSchema:
 
 
 def isJunk(line):
-    junk = ['+ \n', '- \n', 'COPY', 'None', '\\.']
+    junk = ['+ \\.\n', '+ \n', '- \\.\n', '- \n', 'None', '\\.', 'search_path', 'STDIN']
     if line is None:
         return True
     for j in junk:
@@ -30,16 +30,17 @@ def process_chunk(out, b1, b2, table):
         vals = line[2:].split('\t')
         if '' in vals:
             continue
-        if len(line) > 0 and not isJunk(line):
+        if len(line) > 0 and not isJunk(line) and not line == '\\t':
             line = line[:-1]
             if line[0] == '-':
                 out.write('DELETE FROM ' + table.name + ' WHERE ')
                 vals = line[2:].split('\t')
-                for index, col in enumerate(vals):
+                for index, col in enumerate(table.cols):
+                    out.write(col)
                     if vals[index] == '\\N':
-                        out.write(col + ' is NULL')
+                        out.write(' is NULL')
                     else:
-                        out.write(col + '=\'' + vals[index] + '\'')
+                        out.write('=\'' + vals[index] + '\'')
                     if index < len(table.cols) - 1:
                         out.write(' and ')
                     else:
@@ -69,6 +70,7 @@ def process_table_delta(file_today, file_yesterday):
     hosts0 = open(file_today, "r")
     hosts1 = open(file_yesterday, "r")
     try:
+        schema_loaded = False
         table = TableSchema('', [])
         sub1 = 'COPY'
         sub2 = 'FROM STDIN'
@@ -79,16 +81,18 @@ def process_table_delta(file_today, file_yesterday):
             b1 = []
             b2 = []
             for n, lines in enumerate(itertools.zip_longest(hosts0, hosts1)):
+                if not schema_loaded and sub1 in lines[0] and sub2 in lines[0]:
+                    idx1 = lines[0].index(sub1)
+                    idx2 = lines[0].index(sub2)
+                    res = lines[0][idx1 + len(sub1) + 1: idx2]
+                    els = res.split(' ')
+                    table.name = els[0]
+                    table.cols = els[1][1: len(els[1]) - 1].split(',')
+                    schema_loaded = True
                 if not isJunk(lines[0]):
-                    if sub1 in lines[0] and sub2 in lines[0]:
-                        idx1 = lines[0].index(sub1)
-                        idx2 = lines[0].index(sub2)
-                        res = lines[0][idx1 + len(sub1) + 1: idx2]
-                        els = res.split(' ')
-                        table.name = els[0]
-                        table.cols = els[1][1: len(els[1]) - 1].split(',')
                     b1.append(lines[0])
-                    b2.append(lines[1])
+                    if not isJunk(lines[1]):
+                        b2.append(lines[1])
                     if n > 0 and n % 100000 == 0:
                         b2 = ['' if v is None else v for v in b2]
                         process_chunk(out, b1, b2, table)
