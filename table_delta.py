@@ -20,41 +20,57 @@ def isJunk(line):
     return False
 
 
-def process_chunk(out, b1, b2, table):
+
+
+def preprocess_chunk(b1, b2):
     diff = difflib.ndiff(b2, b1)
     delta = []
     for l in diff:
         if l.startswith('+') or l.startswith('-'):
             delta.append(l)
     for line in delta:
-        vals = line[2:].split('\t')
-        if '' in vals:
-            continue
         if len(line) > 0 and not isJunk(line) and not line == '\\t':
-            line = line[:-1]
+            vals = line[2:-1]
+            if vals in diff_dict:
+                diff_dict.pop(vals, None)
             if line[0] == '-':
+                diff_dict[vals] = '-'
+            elif line[0] == '+':
+                diff_dict[vals] = '+'
+
+
+def write_diff_to_file(out, table):
+    for val, op in diff_dict.items():
+        if op == '-':
+            if len(val) > 0 and not isJunk(val) and not val == '\\t':
+                val_split = val.split('\t')
+                if '' in val_split:
+                    continue
                 out.write('DELETE FROM ' + table.name + ' WHERE ')
-                vals = line[2:].split('\t')
                 for index, col in enumerate(table.cols):
                     out.write(col)
-                    if vals[index] == '\\N':
+                    if val_split[index] == '\\N':
                         out.write(' is NULL')
                     else:
-                        out.write('=\'' + vals[index] + '\'')
+                        out.write( '=\'' + val_split[index] + '\'')
                     if index < len(table.cols) - 1:
                         out.write(' and ')
                     else:
                         out.write(';\n')
-            elif line[0] == '+':
+    for val, op in diff_dict.items():
+        if op[0] == '+':
+            if len(val) > 0 and not isJunk(val) and not val == '\\t':
+                val_split = val.split('\t')
+                if '' in val_split:
+                    continue
                 out.write('INSERT INTO ' + table.name + ' (')
                 for index, col in enumerate(table.cols):
                     out.write(col)
                     if index < len(table.cols) - 1:
                         out.write(',')
                 out.write(') VALUES (')
-                vals = line[2:].split('\t')
-                for index, v in enumerate(vals):
-                    if vals[index] == '\\N':
+                for index, v in enumerate(val_split):
+                    if v == '\\N':
                         out.write('NULL')
                     else:
                         out.write('\'' + v + '\'')
@@ -95,11 +111,12 @@ def process_table_delta(file_today, file_yesterday):
                         b2.append(lines[1])
                     if n > 0 and n % 100000 == 0:
                         b2 = ['' if v is None else v for v in b2]
-                        process_chunk(out, b1, b2, table)
+                        preprocess_chunk(b1, b2)
                         b1 = []
                         b2 = []
             b2 = ['' if v is None else v for v in b2]
-            process_chunk(out, b1, b2, table)
+            preprocess_chunk(b1, b2)
+            write_diff_to_file(out, table)
             out.write('COMMIT;\n')
             os.rename(dir_today + '/' + '_delta.sql', dir_today + '/' + table.name + '_delta.sql')
     finally:
