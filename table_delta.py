@@ -33,10 +33,11 @@ def preprocess_chunk(b1, b2, diff_dict):
             vals = line[2:-1]
             if vals in diff_dict:
                 diff_dict.pop(vals, None)
-            if line[0] == '-':
-                diff_dict[vals] = '-'
-            elif line[0] == '+':
-                diff_dict[vals] = '+'
+            else:
+                if line[0] == '-':
+                    diff_dict[vals] = '-'
+                elif line[0] == '+':
+                    diff_dict[vals] = '+'
 
 
 def write_diff_to_file(out, table, diff_dict):
@@ -52,7 +53,8 @@ def write_diff_to_file(out, table, diff_dict):
                     if val_split[index] == '\\N':
                         out.write(' is NULL')
                     else:
-                        out.write( '=\'' + val_split[index] + '\'')
+                        v_raw = r'%s' %val_split[index]
+                        out.write('=\'' + v_raw + '\'')
                     if index < len(table.cols) - 1:
                         out.write(' and ')
                     else:
@@ -73,7 +75,8 @@ def write_diff_to_file(out, table, diff_dict):
                     if v == '\\N':
                         out.write('NULL')
                     else:
-                        out.write('\'' + v + '\'')
+                        v_raw = r'%s' % val_split[index]
+                        out.write('\'' + v_raw + '\'')
                     if index < len(table.cols) - 1:
                         out.write(',')
                     else:
