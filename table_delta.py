@@ -22,7 +22,7 @@ def isJunk(line):
 
 
 
-def preprocess_chunk(b1, b2):
+def preprocess_chunk(b1, b2, diff_dict):
     diff = difflib.ndiff(b2, b1)
     delta = []
     for l in diff:
@@ -39,7 +39,7 @@ def preprocess_chunk(b1, b2):
                 diff_dict[vals] = '+'
 
 
-def write_diff_to_file(out, table):
+def write_diff_to_file(out, table, diff_dict):
     for val, op in diff_dict.items():
         if op == '-':
             if len(val) > 0 and not isJunk(val) and not val == '\\t':
@@ -85,6 +85,8 @@ def process_table_delta(file_today, file_yesterday):
 
     hosts0 = open(file_today, "r")
     hosts1 = open(file_yesterday, "r")
+
+    diff_dict = {}
     try:
         schema_loaded = False
         table = TableSchema('', [])
@@ -111,12 +113,12 @@ def process_table_delta(file_today, file_yesterday):
                         b2.append(lines[1])
                     if n > 0 and n % 100000 == 0:
                         b2 = ['' if v is None else v for v in b2]
-                        preprocess_chunk(b1, b2)
+                        preprocess_chunk(b1, b2, diff_dict)
                         b1 = []
                         b2 = []
             b2 = ['' if v is None else v for v in b2]
-            preprocess_chunk(b1, b2)
-            write_diff_to_file(out, table)
+            preprocess_chunk(b1, b2, diff_dict)
+            write_diff_to_file(out, table, diff_dict)
             out.write('COMMIT;\n')
             os.rename(dir_today + '/' + '_delta.sql', dir_today + '/' + table.name + '_delta.sql')
     finally:
