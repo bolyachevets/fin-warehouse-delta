@@ -11,7 +11,7 @@ class TableSchema:
 
 
 def isJunk(line):
-    junk = ['+ \\.\n', '+ \n', '- \\.\n', '- \n', 'None', '\\.', 'search_path', 'STDIN']
+    junk = ['+ \\.\n', '+ \n', '- \\.\n', '- \n', 'search_path', 'STDIN']
     if line is None:
         return True
     for j in junk:
@@ -53,8 +53,10 @@ def write_diff_to_file(out, table, diff_dict):
                     if val_split[index] == '\\N':
                         out.write(' is NULL')
                     else:
-                        v_raw = r'%s' %val_split[index]
-                        out.write('=\'' + v_raw + '\'')
+                        v = val_split[index]
+                        if '\'' in v:
+                            v = v.replace('\'', '\'\'')
+                        out.write('=\'' + v + '\'')
                     if index < len(table.cols) - 1:
                         out.write(' and ')
                     else:
@@ -75,8 +77,9 @@ def write_diff_to_file(out, table, diff_dict):
                     if v == '\\N':
                         out.write('NULL')
                     else:
-                        v_raw = r'%s' % val_split[index]
-                        out.write('\'' + v_raw + '\'')
+                        if '\'' in v:
+                            v = v.replace('\'', '\'\'')
+                        out.write('\'' + v + '\'')
                     if index < len(table.cols) - 1:
                         out.write(',')
                     else:
