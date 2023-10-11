@@ -11,7 +11,7 @@ class TableSchema:
 
 
 def isJunk(line):
-    junk = ['+ \\.\n', '- \\.\n', 'search_path']
+    junk = ['+ \\.\n', '- \\.\n', 'search_path', 'FROM STDIN']
     if line is None:
         return True
     for j in junk:
