@@ -115,13 +115,13 @@ def process_table_delta(file_today, file_yesterday):
                     schema_loaded = True
                 if not isJunk(lines[0]):
                     b1.append(lines[0])
-                    if not isJunk(lines[1]):
-                        b2.append(lines[1])
-                    if n > 0 and n % 100000 == 0:
-                        b2 = ['' if v is None else v for v in b2]
-                        preprocess_chunk(b1, b2, diff_dict)
-                        b1 = []
-                        b2 = []
+                if not isJunk(lines[1]):
+                    b2.append(lines[1])
+                if n > 0 and n % 100000 == 0:
+                    b2 = ['' if v is None else v for v in b2]
+                    preprocess_chunk(b1, b2, diff_dict)
+                    b1 = []
+                    b2 = []
             b2 = ['' if v is None else v for v in b2]
             preprocess_chunk(b1, b2, diff_dict)
             write_diff_to_file(out, table, diff_dict)
