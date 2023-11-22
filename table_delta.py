@@ -116,7 +116,7 @@ def process_table_delta(file_today, file_yesterday):
                     b1.append(lines[0])
                 if not isJunk(lines[1]):
                     b2.append(lines[1])
-                if n > 0 and n % 100000 == 0:
+                if n > 0 and n % chunk_size == 0:
                     b2 = ['' if v is None else v for v in b2]
                     print(n)
                     preprocess_chunk(b1, b2, diff_dict)
@@ -141,6 +141,7 @@ if __name__ == '__main__':
     dir_today = os.environ['DIR_TODAY']
     dir_yesterday = os.environ['DIR_YESTERDAY']
     clean_dirs = int(os.getenv('CLEAN_DIRS', 0))
+    chunk_size = int(os.getenv('CHUNK_SIZE', 100000))
 
     for i in os.listdir(dir_today):
         if os.path.isfile(os.path.join(dir_today,i)) and '_output.sql' in i:
