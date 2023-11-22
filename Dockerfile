@@ -16,6 +16,7 @@ COPY . .
 
 # Set Python path
 ENV PYTHONPATH=/opt/app-root
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8080
 
