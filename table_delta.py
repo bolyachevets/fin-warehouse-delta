@@ -102,6 +102,7 @@ def process_table_delta(file_today, file_yesterday):
             out.write('SET synchronous_commit TO off;\n')
             b1 = []
             b2 = []
+            print('diffing file chunks...')
             for n, lines in enumerate(itertools.zip_longest(hosts0, hosts1)):
                 if not schema_loaded and sub1 in lines[0] and sub2 in lines[0]:
                     idx1 = lines[0].index(sub1)
@@ -117,14 +118,19 @@ def process_table_delta(file_today, file_yesterday):
                     b2.append(lines[1])
                 if n > 0 and n % 100000 == 0:
                     b2 = ['' if v is None else v for v in b2]
+                    print(n)
                     preprocess_chunk(b1, b2, diff_dict)
                     b1 = []
                     b2 = []
+                    print('moving to next chunk...')
             b2 = ['' if v is None else v for v in b2]
+            print('diffing remainder...')
             preprocess_chunk(b1, b2, diff_dict)
+            print('preparing to write to file...')
             write_diff_to_file(out, table, diff_dict)
             out.write('COMMIT;\n')
             os.rename(dir_today + '/' + '_delta.sql', dir_today + '/' + table.name + '_delta.sql')
+            print('delta ready...')
     finally:
         hosts0.close()
         hosts1.close()
