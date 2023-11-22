@@ -20,8 +20,6 @@ def isJunk(line):
     return False
 
 
-
-
 def preprocess_chunk(b1, b2, diff_dict):
     diff = difflib.ndiff(b2, b1)
     delta = []
@@ -140,7 +138,10 @@ if __name__ == '__main__':
 
     for i in os.listdir(dir_today):
         if os.path.isfile(os.path.join(dir_today,i)) and '_output.sql' in i:
+            print('starting...')
+            print(i)
             process_table_delta(os.path.join(dir_today,i), os.path.join(dir_yesterday,i))
             if clean_dirs == 1:
                 os.remove(os.path.join(dir_yesterday,i))
                 shutil.move(os.path.join(dir_today,i), os.path.join(dir_yesterday,i))
+            print('processed...')
